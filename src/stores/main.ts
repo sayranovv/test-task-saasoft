@@ -1,33 +1,40 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
-import type { Account, Tag } from '@/types/models.ts'
+import type { Account } from '@/types/models.ts'
 
 export const useMainStore = defineStore('mainStore', () => {
-  const accounts = ref<Account[]>([
-    {
-      id: '1',
-      tags: [{ text: 'tag1' }],
-      type: 'local',
-      login: 'login',
-      password: 'qwerty123456',
-    },
-    {
-      id: '2',
-      tags: [{ text: 'tag2' }, { text: 'tag2' }],
-      type: 'ldap',
-      login: 'login2',
-      password: 'qwerty123456',
-    },
-    {
-      id: '3',
-      tags: [{ text: 'tag3' }],
-      type: 'local',
-      login: 'login3',
-      password: 'qwerty123456',
-    },
-  ])
+  const loadAccounts = (): Account[] => {
+    const saved = localStorage.getItem('accounts')
+    if (!saved) return []
 
-  const addAccount = (account: Account) => accounts.value.push(account)
+    return JSON.parse(saved)
+      .filter((account: Account) => account.login.trim() !== '')
+      .map((account: Account) => {
+        if (account.type === 'local' && account.password === null) {
+          return { ...account, type: 'ldap' }
+        }
+        return account
+      })
+  }
+
+  const accounts = ref<Account[]>(loadAccounts())
+
+  watch(
+    accounts,
+    (newAccounts) => {
+      localStorage.setItem('accounts', JSON.stringify(newAccounts))
+    },
+    { deep: true },
+  )
+
+  const addAccount = (account: Account) => {
+    const existingIndex = accounts.value.findIndex((a) => a.id === account.id)
+    if (existingIndex !== -1) {
+      accounts.value[existingIndex] = account
+    } else {
+      accounts.value.push(account)
+    }
+  }
 
   const deleteAccount = (id: string) => {
     const idx = accounts.value.findIndex((account) => account.id === id)
