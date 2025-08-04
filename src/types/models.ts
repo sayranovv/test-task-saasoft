@@ -5,7 +5,7 @@ export interface Tag {
 export interface Account {
   id: string
   tags: Tag[]
-  type: 'local' | 'ldap'
+  type: 'local' | 'ldap' | null
   login: string
-  password: string
+  password: string | null
 }
